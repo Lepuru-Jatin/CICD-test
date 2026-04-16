@@ -28,27 +28,6 @@ jobs:
       - name: Show Salesforce CLI version
         run: sf version --verbose
 
-      - name: Check required secrets exist
-        shell: bash
-        run: |
-          if [ -z "${{ secrets.SF_CONSUMER_KEY }}" ]; then
-            echo "Missing secret: SF_CONSUMER_KEY"
-            exit 1
-          fi
-          if [ -z "${{ secrets.SF_USER_NAME }}" ]; then
-            echo "Missing secret: SF_USER_NAME"
-            exit 1
-          fi
-          if [ -z "${{ secrets.SF_INSTANCE_URL }}" ]; then
-            echo "Missing secret: SF_INSTANCE_URL"
-            exit 1
-          fi
-          if [ -z "${{ secrets.SF_JWT_KEY }}" ]; then
-            echo "Missing secret: SF_JWT_KEY"
-            exit 1
-          fi
-          echo "All required secrets are present."
-
       - name: Create JWT key file
         shell: bash
         run: |
@@ -56,7 +35,6 @@ jobs:
           ${{ secrets.SF_JWT_KEY }}
           EOF
           chmod 600 server.key
-          ls -l server.key
 
       - name: Authenticate to Salesforce
         run: |
@@ -65,8 +43,7 @@ jobs:
             --jwt-key-file server.key \
             --username "${{ secrets.SF_USER_NAME }}" \
             --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
-            --alias target-org \
-            --json
+            --alias target-org
 
       - name: Check authenticated org
         run: sf org display --target-org target-org --verbose
