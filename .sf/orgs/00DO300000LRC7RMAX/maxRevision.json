@@ -1,0 +1,534 @@
+{
+    "fileVersion": 0,
+    "serverMaxRevisionCounter": 2110,
+    "sourceMembers": {
+        "Profile__Admin": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 50,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Marketing Super User": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 51,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix CS Manager": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 52,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Read Only": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 35,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Administrator": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 36,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Marketing User": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 37,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix PSA - Full User (PSA Administrator)": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 53,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix PSA - Field User (Engineering)": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 54,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Sales User": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 41,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Standard User- No Delete": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 42,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Data Integration API User": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 55,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Order Management": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 56,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix PSA - Full User (Professional Services Management)": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 57,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Customer Success": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 58,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Data Integration API User (ICS)": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 59,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Customer Service Rep": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 60,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Super User": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 61,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ConnectedApp__AEM_Cloud_DEV": {
+            "memberType": "ConnectedApp",
+            "serverRevisionCounter": 31,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSet__ServiceCloudVoiceCustomPsl": {
+            "memberType": "PermissionSet",
+            "serverRevisionCounter": 28,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSet__sfdcInternalInt__sfdc_scrt2": {
+            "memberType": "PermissionSet",
+            "serverRevisionCounter": 2011,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSet__CPQ_Access": {
+            "memberType": "PermissionSet",
+            "serverRevisionCounter": 32,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Data Integration API User (cVent)": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 38,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "Profile__Calix Data Analyst": {
+            "memberType": "Profile",
+            "serverRevisionCounter": 43,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ActivationPlatform__cdpactvstrgptnr__PremiumPartnerPinterest": {
+            "memberType": "ActivationPlatform",
+            "serverRevisionCounter": 62,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSetGroup__force__CopilotSalesforceUserPSG": {
+            "memberType": "PermissionSetGroup",
+            "serverRevisionCounter": 64,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSetGroup__force__CopilotSalesforceAdminPSG": {
+            "memberType": "PermissionSetGroup",
+            "serverRevisionCounter": 66,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ActivationPlatform__cdpactvstrgptnr__LinkedIn_Advertising": {
+            "memberType": "ActivationPlatform",
+            "serverRevisionCounter": 67,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSetGroup__force__SalesWorkspacePSG": {
+            "memberType": "PermissionSetGroup",
+            "serverRevisionCounter": 2085,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FlexiPage__TrustedServicesPrivacyAgent_UtilityBar": {
+            "memberType": "FlexiPage",
+            "serverRevisionCounter": 71,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "AppMenu__AppSwitcher": {
+            "memberType": "AppMenu",
+            "serverRevisionCounter": 1862,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "CustomField__Account_Attributes__c.Active_Arlo__c": {
+            "memberType": "CustomField",
+            "serverRevisionCounter": 73,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSet__sfdcInternalInt__sfdc_nc_constraints_engine_deploy": {
+            "memberType": "PermissionSet",
+            "serverRevisionCounter": 121,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__Calix_Community_C": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1231,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__Calix_IDP_Gateway_C": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1230,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__Calix_Service_Station2": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1233,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__Calix_Supplier_Community1": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1229,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__Internal_Support_Community_Archive1": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1234,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__MFA_PROD_site1": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1232,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__Supplier1": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1235,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExperienceBundle__TestCommunity_C": {
+            "memberType": "ExperienceBundle",
+            "serverRevisionCounter": 1236,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__CalculateImmediately": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 126,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__CanBypassPreserveBundleStructureOnAmend": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 127,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__CustomActionPlugin": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 128,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__ElectronicSignaturePlugin": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 129,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableColumnResizing": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 130,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableCompactMode": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 131,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableEnhancedSecurity": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 132,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableExpandCollapseBundles": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 133,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableEvergreenSubscriptions": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 134,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableLargeConfigurations": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 135,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableLQTSelectionRules": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 136,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnablePolymer3UI": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 137,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnablePriceGuidance": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 138,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableProductOptionDrawer": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 139,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__EnableUsageBasedPricing": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 140,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__ExternalConfiguratorNestedBundles": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 141,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__JSQuoteCalculatorPlugin": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 142,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__LargeQuoteExperienceEnabled": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 143,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__PageSecurityPlugin": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 144,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__PreserveBundleUponRenewals": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 145,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__ProductConfigurationInitializer": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 146,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__ProductSearchPlugin": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 147,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__QuickCalculateEnabled": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 148,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__QuoteCalculatorPlugin": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 149,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__QuoteLineEditsforUsageBasedPricing": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 150,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__ReevaluateBundleLogicOnRenewals": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 151,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__SolutionGroupsEnabled": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 153,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__SortProductsInMemory": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 154,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__Theme": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 155,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__ThirdPartyConfigurator": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 157,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__UseLegacyCalculator": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 158,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__UseLegacyContractService": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 160,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterDate__SBQQ__lastReadinessCheck": {
+            "memberType": "FeatureParameterDate",
+            "serverRevisionCounter": 152,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterInteger__SBQQ__numberOfPSLs": {
+            "memberType": "FeatureParameterInteger",
+            "serverRevisionCounter": 156,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterInteger__SBQQ__usersWithPSL": {
+            "memberType": "FeatureParameterInteger",
+            "serverRevisionCounter": 159,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterInteger__SBQQ__usersWithPS": {
+            "memberType": "FeatureParameterInteger",
+            "serverRevisionCounter": 161,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterInteger__SBQQ__inactiveUsersWithPS": {
+            "memberType": "FeatureParameterInteger",
+            "serverRevisionCounter": 162,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__isReadyToUpgrade": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 163,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FeatureParameterBoolean__SBQQ__isReadyToAssignLicenses": {
+            "memberType": "FeatureParameterBoolean",
+            "serverRevisionCounter": 164,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSetGroup__Einstein_for_Sales": {
+            "memberType": "PermissionSetGroup",
+            "serverRevisionCounter": 2110,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSetGroup__Einstein_for_Service": {
+            "memberType": "PermissionSetGroup",
+            "serverRevisionCounter": 2093,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "FlexiPage__Integration_UtilityBar": {
+            "memberType": "FlexiPage",
+            "serverRevisionCounter": 1191,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExternalClientApplication__GitHub_JWT_App": {
+            "memberType": "ExternalClientApplication",
+            "serverRevisionCounter": 1870,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExtlClntAppConfigurablePolicies__GitHub_JWT_App_plcy": {
+            "memberType": "ExtlClntAppConfigurablePolicies",
+            "serverRevisionCounter": 1871,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExtlClntAppOauthSettings__GitHub_JWT_App_oauth": {
+            "memberType": "ExtlClntAppOauthSettings",
+            "serverRevisionCounter": 1872,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExtlClntAppGlobalOauthSettings__GitHub_JWT_App_glbloauth": {
+            "memberType": "ExtlClntAppGlobalOauthSettings",
+            "serverRevisionCounter": 1873,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "ExtlClntAppOauthConfigurablePolicies__GitHub_JWT_App_oauthPlcy": {
+            "memberType": "ExtlClntAppOauthConfigurablePolicies",
+            "serverRevisionCounter": 1874,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        },
+        "PermissionSet__sfdcInternalInt__sfdc_accelerate_dms": {
+            "memberType": "PermissionSet",
+            "serverRevisionCounter": 1910,
+            "lastRetrievedFromServer": null,
+            "isNameObsolete": false
+        }
+    }
+}
