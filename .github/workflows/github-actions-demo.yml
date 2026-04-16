@@ -1,19 +1,14 @@
-name: Deploy to sffnoobs environment on push to main
+name: Deploy to sfsb environment on push to main
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'force-app/**'
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  deploy-to-sffnoobs-environment:
+  deploy-to-sfsb-environment:
     runs-on: ubuntu-latest
     environment: SANDBOX
-
     steps:
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -58,7 +53,7 @@ jobs:
             --instance-url "${{ vars.SF_INSTANCE_URL }}" \
             --alias target-org
 
-      - name: Deploy delta to environment
+      - name: Deploy to environment with running all local tests
         run: |
           sf project deploy start \
             --source-dir changed-sources/force-app \
