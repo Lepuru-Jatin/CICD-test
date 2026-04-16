@@ -1,18 +1,58 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+name: Deploy to Salesforce
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
-  Explore-GitHub-Actions:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v5
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Create JWT key file
+        shell: bash
         run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+          cat <<'EOF' > server.key
+          ${{ secrets.SF_JWT_KEY }}
+          EOF
+          chmod 600 server.key
+
+      - name: Authenticate to Salesforce
+        run: |
+          sf org login jwt \
+            --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
+            --jwt-key-file server.key \
+            --username "${{ secrets.SF_USER_NAME }}" \
+            --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
+            --alias target-org
+
+      - name: Check authenticated org
+        run: sf org display --target-org target-org
+
+      - name: Validate deployment
+        run: |
+          sf project deploy start \
+            --source-dir force-app \
+            --target-org target-org \
+            --dry-run \
+            --wait 30
+
+      - name: Deploy to Salesforce
+        run: |
+          sf project deploy start \
+            --source-dir force-app \
+            --target-org target-org \
+            --wait 30
