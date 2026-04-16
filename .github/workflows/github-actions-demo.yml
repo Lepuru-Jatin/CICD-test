@@ -1,66 +1,40 @@
-name: Deploy to Salesforce
+name: Deploy to sffnoobs environment on push to main
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    branches: [ main ]
+    paths:
+      - 'force-app/**'
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  Deploy-to-sffnoobs-environment:
+      runs-on: ubuntu-latest
+      environment: SANDBOX
+      steps:
+          - uses: actions/setup-node@v3
+            with:
+              node-version: '18'
+          - name: 'Checkout source code'
+            uses: actions/checkout@v3
+            with:
+              fetch-depth: '2'
+                
+          # Now Install Salesforce CLI
+          - name: 'Install sfdx'
+            run: npm install @salesforce/cli --global
+          - name: 'Installing sfdx git delta'
+            run: | 
+                echo Y | sfdx plugins:install sfdx-git-delta
+                sfdx plugins
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Install Salesforce CLI
-        run: npm install -g @salesforce/cli
-
-      - name: Show Salesforce CLI version
-        run: sf version --verbose
-
-      - name: Create JWT key file
-        shell: bash
-        run: |
-          cat <<'EOF' > server.key
-          ${{ secrets.SF_JWT_KEY }}
-          EOF
-          chmod 600 server.key
-
-      - name: Authenticate to Salesforce
-        run: |
-          sf org login jwt \
-            --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
-            --jwt-key-file server.key \
-            --username "${{ secrets.SF_USER_NAME }}" \
-            --instance-url "${{ secrets.SF_INSTANCE_URL }}" \
-            --alias target-org
-
-      - name: Check authenticated org
-        run: sf org display --target-org target-org --verbose
-
-      - name: Validate deployment
-        run: |
-          sf project deploy start \
-            --source-dir force-app \
-            --target-org target-org \
-            --dry-run \
-            --wait 30 \
-            --json
-
-      - name: Deploy to Salesforce
-        run: |
-          sf project deploy start \
-            --source-dir force-app \
-            --target-org target-org \
-            --wait 30 \
-            --json
+          - name: 'Create delta packages'
+            run: | 
+                mkdir changed-sources
+                sf sgd source delta --to "HEAD" --from "HEAD~1" --output changed-sources/ --generate-delta --source force-app/
+                echo "[INFO] Diff generated"
+                
+          - name: 'Deploy to environment with running all local tests'
+            run: |
+                echo "${{ secrets.SF_JWT_KEY }}" > server.key
+                sf org login jwt --username ${{ secrets.SF_USER_NAME }} --jwt-key-file server.key --client-id ${{ secrets.SF_CONSUMER_KEY }} --instance-url ${{ vars.SF_INSTANCE_URL }} --set-default
+                sf project deploy start --source-dir changed-sources/force-app --test-level RunLocalTests
