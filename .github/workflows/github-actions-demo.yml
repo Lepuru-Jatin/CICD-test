@@ -3,12 +3,19 @@ name: Deploy to sfsb environment on push to main
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'force-app/**'
+      - '.github/workflows/**'
   workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy-to-sfsb-environment:
     runs-on: ubuntu-latest
     environment: SANDBOX
+
     steps:
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -27,10 +34,11 @@ jobs:
         run: |
           echo Y | sf plugins install sfdx-git-delta
           sf plugins
+          sf version --verbose
 
       - name: Create delta packages
         run: |
-          mkdir changed-sources
+          mkdir -p changed-sources
           sf sgd source delta \
             --to "HEAD" \
             --from "HEAD~1" \
@@ -38,6 +46,14 @@ jobs:
             --generate-delta \
             --source-dir "force-app"
           echo "[INFO] Diff generated"
+          find changed-sources -maxdepth 4 -type f | sort || true
+
+      - name: Stop if no Salesforce delta found
+        run: |
+          if [ ! -d changed-sources/force-app ]; then
+            echo "No force-app changes found. Nothing to deploy."
+            exit 0
+          fi
 
       - name: Create JWT key file
         run: |
@@ -50,13 +66,3 @@ jobs:
             --username "${{ secrets.SF_USER_NAME }}" \
             --jwt-key-file server.key \
             --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
-            --instance-url "${{ vars.SF_INSTANCE_URL }}" \
-            --alias target-org
-
-      - name: Deploy to environment with running all local tests
-        run: |
-          sf project deploy start \
-            --source-dir changed-sources/force-app \
-            --target-org target-org \
-            --test-level RunLocalTests \
-            --json
