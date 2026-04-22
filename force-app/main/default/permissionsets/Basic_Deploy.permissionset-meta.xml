@@ -2,10 +2,15 @@
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Basic Deploy</label>
     <hasActivationRequired>false</hasActivationRequired>
-    <description>Simple permission set to validate deployment via Git/VS Code.</description>
+
+    <!-- Dependency permission required by ViewSetup -->
+    <userPermissions>
+        <name>ViewRoles</name>
+        <enabled>true</enabled>
+    </userPermissions>
 
     <userPermissions>
-        <enabled>true</enabled>
         <name>ViewSetup</name>
+        <enabled>true</enabled>
     </userPermissions>
 </PermissionSet>
