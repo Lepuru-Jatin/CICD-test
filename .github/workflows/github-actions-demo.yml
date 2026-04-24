@@ -81,6 +81,16 @@ jobs:
             --post-destructive-changes manifest/destructiveChangesPost.xml \
             --test-level RunLocalTests \
             --wait 60
+        
+      - name: Deploy destructive changes
+        if: ${{ hashFiles('manifest/destructiveChangesPost.xml') != '' }}
+        run: |
+          echo "Deploying destructive changes..."
+          sf project deploy start \
+            --manifest manifest/package.xml \
+            --post-destructive-changes manifest/destructiveChangesPost.xml \
+            --wait 60
+
       # 11) If no delta exists, skip deploy gracefully
       - name: No delta changes - skipping deployment
         if: ${{ hashFiles('changed-sources/force-app/**') == '' }}
