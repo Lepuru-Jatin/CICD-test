@@ -5,8 +5,6 @@ on:
     branches: [ main ]
     paths:
       - 'force-app/**'
-      - 'manifest/**'
-      - '.github/workflows/**'
   workflow_dispatch:
 
 env:
@@ -19,12 +17,12 @@ jobs:
 
     steps:
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -36,8 +34,7 @@ jobs:
           echo Y | sf plugins install sfdx-git-delta
           sf plugins
           sf version --verbose
-
-      # Create delta folder (changed-sources)
+      # 5) Create delta folder (changed-sources)
       - name: Create delta packages
         run: |
           mkdir -p changed-sources
@@ -47,37 +44,21 @@ jobs:
             --output-dir "changed-sources" \
             --generate-delta \
             --source-dir "force-app"
-
           echo "[INFO] Diff generated"
           echo "----- Listing changed-sources -----"
           ls -la changed-sources || true
           echo "----- Find files under changed-sources -----"
           find changed-sources -maxdepth 6 -type f | sort || true
-
-          echo "----- Find delta package.xml (IMPORTANT) -----"
-          find changed-sources -maxdepth 6 -type f -name package.xml | sort || true
-
-      # Confirm manifest files exist (helps avoid silent skips)
-      - name: confirm manifest files exist
-        run: |
-          echo "----- Listing manifest -----"
-          ls -la manifest || true
-          echo "----- Show destructive files -----"
-          ls -la manifest/destructiveChangesPost.xml || true
-          ls -la manifest/package.xml || true
-
-      # Create JWT key file from GitHub secret
+      # 6) Create JWT key file from GitHub secret
       - name: Create JWT key file
         run: |
-          printf "%s" "${{ secrets.SF_JWT_KEY }}" > server.key
+          echo "${{ secrets.SF_JWT_KEY }}" > server.key
           chmod 600 server.key
-
-      # Debug instance url (same var used for login)
-      - name: Debug SF_INSTANCE_URL
+      # 7) Debug instance url (helps detect empty vars)
+      - name: Debug INSTANCE_URL
         run: |
-          echo "SF_INSTANCE_URL='${{ vars.SF_INSTANCE_URL }}'"
-
-      # Authenticate to Salesforce via JWT
+          echo "INSTANCE_URL='${{ vars.INSTANCE_URL }}'"
+      # 8) Authenticate to Salesforce via JWT
       - name: Authenticate to Salesforce (JWT)
         run: |
           sf org login jwt \
@@ -86,43 +67,25 @@ jobs:
             --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
             --instance-url "${{ vars.SF_INSTANCE_URL }}" \
             --set-default
-
-      # Safe debug (no access token printed)
-      - name: Debug org connection (safe)
+      # 9) OPTIONAL: show which org is default (debug)
+      - name: Debug org connection
         run: |
-          sf org display
-
-      # ✅ Deploy delta ONLY if delta package.xml exists
+          sf org display --verbose
+      # 10) Deploy ONLY if delta exists (prevents "folder not found")
       - name: Deploy delta to Sandbox (Run Local Tests)
-        if: ${{ hashFiles('changed-sources/**/package.xml') != '' }}
+        if: ${{ hashFiles('changed-sources/force-app/**') != '' }}
         run: |
-          echo "Delta manifest found. Deploying delta package..."
-          echo "Detected package.xml paths:"
-          find changed-sources -maxdepth 6 -type f -name package.xml | sort || true
-
-          # Most common path produced by sfdx-git-delta:
+          echo "Delta found. Deploying changed-sources/force-app ..."
           sf project deploy start \
-            --manifest changed-sources/package/package.xml \
+            --source-dir changed-sources/force-app \
             --test-level RunLocalTests \
             --wait 60
-
-      # ✅ Deploy destructive changes separately (manifest required)
-      - name: Deploy destructive changes (Post)
-        if: ${{ hashFiles('manifest/destructiveChangesPost.xml') != '' }}
+      # 11) If no delta exists, skip deploy gracefully
+      - name: No delta changes - skipping deployment
+        if: ${{ hashFiles('changed-sources/force-app/**') == '' }}
         run: |
-          echo "Deploying destructive changes (post)..."
-          sf project deploy start \
-            --manifest manifest/package.xml \
-            --post-destructive-changes manifest/destructiveChangesPost.xml \
-            --wait 60
-
-      # If no delta exists, skip delta deploy gracefully
-      - name: No delta changes - skipping delta deployment
-        if: ${{ hashFiles('changed-sources/**/package.xml') == '' }}
-        run: |
-          echo "No delta package.xml detected. Skipping delta deployment."
-
-      # Cleanup always (important for security)
+          echo "No Salesforce delta detected in changed-sources/force-app. Skipping deployment."
+      # 12) Cleanup always (important for security)
       - name: Clean up
         if: always()
         run: rm -f server.key
