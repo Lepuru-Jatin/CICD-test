@@ -78,6 +78,7 @@ jobs:
           echo "Delta found. Deploying changed-sources/force-app ..."
           sf project deploy start \
             --source-dir changed-sources/force-app \
+            --post-destructive-changes manifest/destructiveChangesPost.xml \
             --test-level RunLocalTests \
             --wait 60
       # 11) If no delta exists, skip deploy gracefully
