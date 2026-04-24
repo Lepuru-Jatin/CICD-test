@@ -45,12 +45,16 @@ jobs:
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
+            --generate-destructive-changes \
             --source-dir "force-app"
 
           echo "----- Listing changed-sources -----"
           ls -la changed-sources || true
           echo "----- Find generated package.xml -----"
           find changed-sources -name package.xml -print -exec cat {} \; || true
+          echo "----- destructive pre/post (if any) -----"
+          find changed-sources -name "destructiveChangesPre.xml" -print -exec cat {} \; || true
+          find changed-sources -name "destructiveChangesPost.xml" -print -exec cat {} \; || true
 
       # Create JWT key file from GitHub secret
       - name: Create JWT key file
@@ -78,16 +82,57 @@ jobs:
           sf org display --verbose
 
       # Deploy using manifest ONLY if package.xml exists
-
-
-      - name: Deploy delta to Sandbox using Manifest (Run Local Tests)
-        if: ${{ hashFiles('changed-sources/package/package.xml') != '' }}
+      
+      # PRE destructive changes (if present)
+      - name: Deploy PRE destructive changes
+        if: ${{ hashFiles('changed-sources/**/destructiveChangesPre.xml') != '' }}
         run: |
-          echo "Manifest found. Deploying using package.xml..."
+          echo "Pre-destructive file found. Deploying PRE destructive..."
+          PRE_FILE=$(find changed-sources -name destructiveChangesPre.xml | head -n 1)
+          PKG_FILE=$(dirname "$PRE_FILE")/package.xml
+
+          echo "Using:"
+          echo "  PRE_FILE=$PRE_FILE"
+          echo "  PKG_FILE=$PKG_FILE"
+
           sf project deploy start \
-            --manifest changed-sources/package/package.xml \
+            --manifest "$PKG_FILE" \
+            --pre-destructive-changes "$PRE_FILE" \
             --test-level RunLocalTests \
             --wait 60
+
+
+      # NORMAL delta deploy (if package.xml exists)
+      - name: Deploy delta to Sandbox using Manifest (Run Local Tests)
+        if: ${{ hashFiles('changed-sources/**/package.xml') != '' }}
+        run: |
+          echo "Manifest found. Deploying delta package..."
+          PKG=$(find changed-sources -path "*package.xml" | head -n 1)
+          echo "Using PKG=$PKG"
+
+          sf project deploy start \
+            --manifest "$PKG" \
+            --test-level RunLocalTests \
+            --wait 60
+
+      # POST destructive changes (if present)
+      - name: Deploy POST destructive changes
+        if: ${{ hashFiles('changed-sources/**/destructiveChangesPost.xml') != '' }}
+        run: |
+          echo "Post-destructive file found. Deploying POST destructive..."
+          POST_FILE=$(find changed-sources -name destructiveChangesPost.xml | head -n 1)
+          PKG_FILE=$(dirname "$POST_FILE")/package.xml
+
+          echo "Using:"
+          echo "  POST_FILE=$POST_FILE"
+          echo "  PKG_FILE=$PKG_FILE"
+
+          sf project deploy start \
+            --manifest "$PKG_FILE" \
+            --post-destructive-changes "$POST_FILE" \
+            --test-level RunLocalTests \
+            --wait 60
+
 
       # If no package.xml, skip deploy
       - name: No delta changes - skipping deployment
