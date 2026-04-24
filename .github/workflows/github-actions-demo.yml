@@ -36,7 +36,8 @@ jobs:
           sf version --verbose
 
       # Create delta packages WITH manifest (package.xml)
-      - name: Create delta manifest
+      
+      - name: Create delta packages
         run: |
           mkdir -p changed-sources
           sf sgd source delta \
@@ -44,16 +45,11 @@ jobs:
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
-            --source-dir "force-app" \
-            --generate-manifest
+            --source-dir "force-app"
 
-          echo "[INFO] Diff generated"
           echo "----- Listing changed-sources -----"
           ls -la changed-sources || true
-          echo "----- Find files under changed-sources -----"
-          find changed-sources -maxdepth 6 -type f | sort || true
-
-          echo "----- Show package.xml (if exists) -----"
+          echo "----- Find generated package.xml -----"
           find changed-sources -name package.xml -print -exec cat {} \; || true
 
       # Create JWT key file from GitHub secret
@@ -82,23 +78,22 @@ jobs:
           sf org display --verbose
 
       # Deploy using manifest ONLY if package.xml exists
-      - name: Deploy delta to Sandbox using Manifest (Run Local Tests)
-        if: ${{ hashFiles('changed-sources/**/package.xml') != '' }}
-        run: |
-          echo "Delta manifest found. Deploying using package.xml..."
-          PACKAGE_XML_PATH="$(find changed-sources -name package.xml | head -n 1)"
-          echo "Using manifest: $PACKAGE_XML_PATH"
 
+
+      - name: Deploy delta to Sandbox using Manifest (Run Local Tests)
+        if: ${{ hashFiles('changed-sources/package/package.xml') != '' }}
+        run: |
+          echo "Manifest found. Deploying using package.xml..."
           sf project deploy start \
-            --manifest "$PACKAGE_XML_PATH" \
+            --manifest changed-sources/package/package.xml \
             --test-level RunLocalTests \
             --wait 60
 
       # If no package.xml, skip deploy
       - name: No delta changes - skipping deployment
-        if: ${{ hashFiles('changed-sources/**/package.xml') == '' }}
+        if: ${{ hashFiles('changed-sources/package/package.xml') == '' }}
         run: |
-          echo "No delta manifest (package.xml) found. Skipping deployment."
+          echo "No package.xml found. Skipping deployment."
 
       # Cleanup always
       - name: Clean up
