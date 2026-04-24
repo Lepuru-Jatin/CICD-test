@@ -58,7 +58,7 @@ jobs:
           find changed-sources -maxdepth 6 -type f -name package.xml | sort || true
 
       # Confirm manifest files exist (helps avoid silent skips)
-      - name: Debug: confirm manifest files exist
+      - name: confirm manifest files exist
         run: |
           echo "----- Listing manifest -----"
           ls -la manifest || true
