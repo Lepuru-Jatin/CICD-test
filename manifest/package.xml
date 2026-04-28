@@ -41,7 +41,7 @@
         <name>CustomObject</name>
     </types>
     <types>
-        <members>Account.Temp_Field__c</members>
+        <members>*</members>
         <name>CustomField</name>
     </types>
     <types>
