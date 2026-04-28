@@ -114,7 +114,12 @@ jobs:
       - name: Debug org connection
         run: |
           sf org display --verbose
-
+      - name: Debug destructive files (before deploy)
+        run: |
+          echo "===== POST destructive file ====="
+          ls -la changed-sources/destructiveChanges || true
+          echo "----- destructiveChangesPost.xml -----"
+          cat changed-sources/destructiveChanges/destructiveChangesPost.xml || echo "NO POST FILE"
       # 3) Deploy delta (adds/updates) + pre/post destructive (if present)
       - name: Deploy delta to Sandbox (manifest + pre/post destructive) - Run Local Tests
         if: ${{ hashFiles('changed-sources/package/package.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPre.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPost.xml') != '' }}
