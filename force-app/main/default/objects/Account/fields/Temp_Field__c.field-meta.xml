@@ -5,5 +5,5 @@
     <type>Text</type>
     <length>50</length>
     <required>false</required>
-</CustomField> //1
+</CustomField> 
 
