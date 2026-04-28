@@ -76,22 +76,20 @@ jobs:
           SRC="changed-sources/destructiveChanges/destructiveChanges.xml"
 
           # Clean old
-          rm -f "$PRE" "$POST"
+          rm -f "$PRE"
 
-          if [ -f "$SRC" ]; then
-            # Default behavior: use same deletes as POST (recommended safer)
-            # If you want deletes BEFORE deployment, copy to PRE instead.
+          # Only copy generated destructive if you DON'T already have a manual POST file
+          if [ -f "$POST" ]; then
+            echo "Manual POST destructive found. Not overwriting: $POST"
+          elif [ -f "$SRC" ]; then
             cp "$SRC" "$POST"
-
-            # OPTIONAL: If you also want PRE destructive, uncomment next line:
-            # cp "$SRC" "$PRE"
+            echo "Copied generated destructive to POST: $POST"
+          else
+            echo "No destructive file found"
           fi
 
-          echo "----- Pre file exists? -----"
-          [ -f "$PRE" ] && echo "YES: $PRE" || echo "NO"
-
-          echo "----- Post file exists? -----"
-          [ -f "$POST" ] && echo "YES: $POST" || echo "NO"
+          echo "----- POST destructive -----"
+          [ -f "$POST" ] && cat "$POST" || echo "NO POST FILE"
 
       # Create JWT key file from GitHub secret
       - name: Create JWT key file
@@ -125,15 +123,17 @@ jobs:
 
           CMD="sf project deploy start --wait 60 --test-level RunLocalTests"
 
+          # If pre-destructive exists, include it
+          if [ -f changed-sources/destructiveChanges/destructiveChangesPre.xml ]; then
+            CMD="$CMD --pre-destructive-changes changed-sources/destructiveChanges/destructiveChangesPre.xml"
+          fi
+
           # If package.xml exists, include it
           if [ -f changed-sources/package/package.xml ]; then
             CMD="$CMD --manifest changed-sources/package/package.xml"
           fi
 
-          # If pre-destructive exists, include it
-          if [ -f changed-sources/destructiveChanges/destructiveChangesPre.xml ]; then
-            CMD="$CMD --pre-destructive-changes changed-sources/destructiveChanges/destructiveChangesPre.xml"
-          fi
+          
 
           # If post-destructive exists, include it
           if [ -f changed-sources/destructiveChanges/destructiveChangesPost.xml ]; then

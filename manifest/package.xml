@@ -41,10 +41,6 @@
         <name>CustomObject</name>
     </types>
     <types>
-        <members>*</members>
-        <name>CustomField</name>
-    </types>
-    <types>
         <members>Basic_Deploy</members>
         <name>PermissionSet</name>
     </types>
