@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'force-app/**'
+      - .manifest/**''
   workflow_dispatch:
 
 env:
