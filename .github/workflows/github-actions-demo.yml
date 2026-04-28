@@ -105,17 +105,27 @@ jobs:
 
 
       # NORMAL delta deploy (if package.xml exists)
-      - name: Deploy delta to Sandbox using Manifest (Run Local Tests)
-        if: ${{ hashFiles('changed-sources/**/package.xml') != '' }}
+      - name: Deploy delta to Sandbox (Run Local Tests)
         run: |
-          echo "Manifest found. Deploying delta package..."
-          PKG=$(find changed-sources -path "*package.xml" | head -n 1)
-          echo "Using PKG=$PKG"
+              PKG="changed-sources/package/package.xml"
+              if [ ! -f "$PKG" ]; then
+                echo "No delta manifest found ($PKG). Skipping."
+                exit 0
+              fi
 
-          sf project deploy start \
-            --manifest "$PKG" \
-            --test-level RunLocalTests \
-            --wait 60
+              echo "Delta manifest found: $PKG"
+              cat "$PKG"
+
+              # Skip if no <types> in package.xml (empty deploy)
+              if ! grep -q "<types>" "$PKG"; then
+                echo "Delta manifest is empty (no <types>). Nothing to deploy. Skipping."
+                exit 0
+              fi
+
+              sf project deploy start \
+                --manifest "$PKG" \
+                --test-level RunLocalTests \
+                --wait 60
 
       # POST destructive changes (if present)
       - name: Deploy POST destructive changes
