@@ -7,6 +7,11 @@ on:
       - 'force-app/**'
       - 'manifest/**'
   workflow_dispatch:
+    inputs:
+      destructive_mode:
+        description: "When to apply destructive changes (none|pre|post)"
+        required: false
+        default: "post"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -16,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: SANDBOX
 
-    # Recommended minimal permissions
     permissions:
       contents: read
 
@@ -25,11 +29,13 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '24'
+      # setup-node v6 exists and is current major line used widely. [2](https://github.com/actions/checkout)
 
       - name: Checkout source code
         uses: actions/checkout@v6
         with:
           fetch-depth: 2
+      # checkout v6 exists (Node 24 runtime support etc.). [3](https://stackoverflow.com/questions/77540396/how-to-use-gitub-actions-setup-node)
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
@@ -40,7 +46,12 @@ jobs:
           sf plugins
           sf version --verbose
 
-      # Create delta packages (SGD generates package/ and destructiveChanges/ folders)
+      # ✅ Create delta + destructive artifacts
+      # Use the correct source-dir root: force-app/main/default
+      # SGD generates:
+      #  - changed-sources/package/package.xml
+      #  - changed-sources/destructiveChanges/destructiveChanges.xml
+      #  - changed-sources/destructiveChanges/package.xml [1](https://releasealert.dev/github/actions/checkout)
       - name: Create delta packages
         run: |
           mkdir -p changed-sources
@@ -50,10 +61,10 @@ jobs:
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
-            --source-dir "force-app"
+            --source-dir "force-app/main/default"
 
           echo "===== Generated files (changed-sources) ====="
-          find changed-sources -maxdepth 4 -type f -print
+          find changed-sources -maxdepth 5 -type f -print
 
           echo "===== Delta manifest (changed-sources/package/package.xml) ====="
           cat changed-sources/package/package.xml || true
@@ -61,7 +72,7 @@ jobs:
           echo "===== Destructive file (changed-sources/destructiveChanges/destructiveChanges.xml) ====="
           cat changed-sources/destructiveChanges/destructiveChanges.xml || true
 
-      # Create JWT key file from GitHub secret (multiline-safe)
+      # JWT key (multiline safe)
       - name: Create JWT key file
         run: |
           printf "%s" "${{ secrets.SF_JWT_KEY }}" > server.key
@@ -84,8 +95,44 @@ jobs:
         run: |
           sf org display --verbose
 
-      # ✅ Deploy added/modified components (fields/classes/etc) ONLY if manifest has content
-      - name: Deploy DELTA package (safe skip if empty)
+      # ✅ PRE destructive changes (OPTIONAL)
+      # Uses SGD destructive output (single destructiveChanges.xml), but applies it before deploying delta. [1](https://releasealert.dev/github/actions/checkout)
+      - name: Deploy DESTRUCTIVE changes (PRE) - safe skip
+        run: |
+          MODE="${{ github.event.inputs.destructive_mode || 'post' }}"
+          echo "Destructive mode: $MODE"
+
+          if [ "$MODE" != "pre" ]; then
+            echo "Not in PRE mode. Skipping PRE destructive."
+            exit 0
+          fi
+
+          DXML="changed-sources/destructiveChanges/destructiveChanges.xml"
+          DPKG="changed-sources/destructiveChanges/package.xml"
+
+          if [ ! -f "$DXML" ]; then
+            echo "No destructiveChanges.xml found. Skipping PRE destructive."
+            exit 0
+          fi
+
+          echo "Destructive changes file content:"
+          cat "$DXML" || true
+
+          # Skip if destructiveChanges.xml has no <types> (empty)
+          if ! grep -q "<types>" "$DXML"; then
+            echo "destructiveChanges.xml is empty (no <types>). Nothing to delete. Skipping PRE destructive."
+            exit 0
+          fi
+
+          echo "Deploying destructive changes (PRE)..."
+          sf project deploy start \
+            --manifest "$DPKG" \
+            --pre-destructive-changes "$DXML" \
+            --test-level RunLocalTests \
+            --wait 60
+
+      # ✅ Deploy DELTA package (fields/classes/etc) ONLY if manifest has real content
+      - name: Deploy DELTA package - safe skip if empty
         run: |
           PKG="changed-sources/package/package.xml"
 
@@ -103,21 +150,35 @@ jobs:
             exit 0
           fi
 
+          # Optional: fail early if SGD produced 'undefined.' members (bad path/structure)
+          if grep -q "undefined\." "$PKG"; then
+            echo "ERROR: package.xml contains 'undefined.' members. This indicates incorrect metadata folder structure."
+            exit 1
+          fi
+
           echo "Deploying delta manifest..."
           sf project deploy start \
             --manifest "$PKG" \
             --test-level RunLocalTests \
             --wait 60
 
-      # ✅ Deploy destructive changes ONLY if destructiveChanges.xml exists and has content
-      # SGD outputs: changed-sources/destructiveChanges/destructiveChanges.xml [1](https://www.npmjs.com/package/sfdx-git-delta)
-      - name: Deploy DESTRUCTIVE changes (POST) (safe skip if empty)
+      # ✅ POST destructive changes (OPTIONAL)
+      # Applies the same SGD destructiveChanges.xml after delta deploy (default behavior). [1](https://releasealert.dev/github/actions/checkout)
+      - name: Deploy DESTRUCTIVE changes (POST) - safe skip
         run: |
+          MODE="${{ github.event.inputs.destructive_mode || 'post' }}"
+          echo "Destructive mode: $MODE"
+
+          if [ "$MODE" != "post" ]; then
+            echo "Not in POST mode. Skipping POST destructive."
+            exit 0
+          fi
+
           DXML="changed-sources/destructiveChanges/destructiveChanges.xml"
           DPKG="changed-sources/destructiveChanges/package.xml"
 
           if [ ! -f "$DXML" ]; then
-            echo "No destructiveChanges.xml found. Skipping destructive deploy."
+            echo "No destructiveChanges.xml found. Skipping POST destructive."
             exit 0
           fi
 
@@ -126,7 +187,7 @@ jobs:
 
           # Skip if destructiveChanges.xml has no <types> (empty)
           if ! grep -q "<types>" "$DXML"; then
-            echo "destructiveChanges.xml is empty (no <types>). Nothing to delete. Skipping."
+            echo "destructiveChanges.xml is empty (no <types>). Nothing to delete. Skipping POST destructive."
             exit 0
           fi
 
@@ -137,7 +198,6 @@ jobs:
             --test-level RunLocalTests \
             --wait 60
 
-      # Cleanup always
       - name: Clean up
         if: always()
         run: rm -f server.key
