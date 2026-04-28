@@ -7,6 +7,11 @@ on:
       - 'force-app/**'
       - 'manifest/**'
   workflow_dispatch:
+    inputs:
+      destructive_mode:
+        description: "When to apply destructive changes (none|pre|post)"
+        required: false
+        default: "post"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -15,6 +20,9 @@ jobs:
   deploy-to-sfsb-environment:
     runs-on: ubuntu-latest
     environment: SANDBOX
+
+    permissions:
+      contents: read
 
     steps:
       - name: Setup Node
@@ -35,36 +43,41 @@ jobs:
           echo Y | sf plugins install sfdx-git-delta
           sf plugins
           sf version --verbose
-      # Create delta packages WITH manifest (package.xml)
 
-      
-      
+      # SGD generates:
+      # - changed-sources/package/package.xml
+      # - changed-sources/destructiveChanges/destructiveChanges.xml
+      # - changed-sources/destructiveChanges/package.xml
+      # Ref: SGD docs and examples [1](https://releasealert.dev/github/actions/checkout)
       - name: Create delta packages
         run: |
           mkdir -p changed-sources
+
           sf sgd source delta \
             --to "HEAD" \
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
-            --source-dir "force-app"
-          echo "----- Listing changed-sources -----"
-          ls -la changed-sources || true
-          echo "----- Find generated package.xml -----"
-          find changed-sources -name package.xml -print -exec cat {} \; || true
-          echo "----- destructive pre/post (if any) -----"
-          find changed-sources -name "destructiveChangesPre.xml" -print -exec cat {} \; || true
-          find changed-sources -name "destructiveChangesPost.xml" -print -exec cat {} \; || true
-      # Create JWT key file from GitHub secret
+            --source-dir "force-app/main/default"
+
+          echo "===== Generated files (changed-sources) ====="
+          find changed-sources -maxdepth 5 -type f -print
+
+          echo "===== Delta manifest (changed-sources/package/package.xml) ====="
+          cat changed-sources/package/package.xml || true
+
+          echo "===== Destructive file (changed-sources/destructiveChanges/destructiveChanges.xml) ====="
+          cat changed-sources/destructiveChanges/destructiveChanges.xml || true
+
       - name: Create JWT key file
         run: |
-          echo "${{ secrets.SF_JWT_KEY }}" > server.key
+          printf "%s" "${{ secrets.SF_JWT_KEY }}" > server.key
           chmod 600 server.key
-      # Debug instance url (helps detect empty vars)
+
       - name: Debug INSTANCE_URL
         run: |
           echo "SF_INSTANCE_URL='${{ vars.SF_INSTANCE_URL }}'"
-      # Authenticate to Salesforce via JWT
+
       - name: Authenticate to Salesforce (JWT)
         run: |
           sf org login jwt \
@@ -73,58 +86,102 @@ jobs:
             --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
             --instance-url "${{ vars.SF_INSTANCE_URL }}" \
             --set-default
+
       - name: Debug org connection
         run: |
           sf org display --verbose
-      # Deploy using manifest ONLY if package.xml exists
-      
-      # PRE destructive changes (if present)
-      - name: Deploy PRE destructive changes
-        if: ${{ hashFiles('changed-sources/**/destructiveChangesPre.xml') != '' }}
+
+      # ---------- PRE destructive (optional) ----------
+      - name: Deploy destructive changes (PRE) - safe skip
         run: |
-          echo "Pre-destructive file found. Deploying PRE destructive..."
-          PRE_FILE=$(find changed-sources -name destructiveChangesPre.xml | head -n 1)
-          PKG_FILE=$(dirname "$PRE_FILE")/package.xml
-          echo "Using:"
-          echo "  PRE_FILE=$PRE_FILE"
-          echo "  PKG_FILE=$PKG_FILE"
+          MODE="${{ github.event.inputs.destructive_mode || 'post' }}"
+          echo "Destructive mode: $MODE"
+
+          if [ "$MODE" != "pre" ]; then
+            echo "Not PRE mode. Skipping PRE destructive."
+            exit 0
+          fi
+
+          DXML="changed-sources/destructiveChanges/destructiveChanges.xml"
+          DPKG="changed-sources/destructiveChanges/package.xml"
+
+          if [ ! -f "$DXML" ]; then
+            echo "No destructiveChanges.xml found. Skipping PRE destructive."
+            exit 0
+          fi
+
+          if ! grep -q "<types>" "$DXML"; then
+            echo "destructiveChanges.xml is empty. Nothing to delete. Skipping PRE destructive."
+            exit 0
+          fi
+
+          echo "Deploying destructive changes (PRE)..."
           sf project deploy start \
-            --manifest "$PKG_FILE" \
-            --pre-destructive-changes "$PRE_FILE" \
+            --manifest "$DPKG" \
+            --pre-destructive-changes "$DXML" \
             --test-level RunLocalTests \
             --wait 60
-      # NORMAL delta deploy (if package.xml exists)
-      - name: Deploy delta to Sandbox using Manifest (Run Local Tests)
-        if: ${{ hashFiles('changed-sources/**/package.xml') != '' }}
+
+      # ---------- DELTA deploy ----------
+      - name: Deploy delta package - safe skip if empty
         run: |
-          echo "Manifest found. Deploying delta package..."
-          PKG=$(find changed-sources -path "*package.xml" | head -n 1)
-          echo "Using PKG=$PKG"
+          PKG="changed-sources/package/package.xml"
+
+          if [ ! -f "$PKG" ]; then
+            echo "No delta manifest found ($PKG). Skipping delta deploy."
+            exit 0
+          fi
+
+          echo "Delta manifest content:"
+          cat "$PKG" || true
+
+          if ! grep -q "<types>" "$PKG"; then
+            echo "Delta manifest is empty. Nothing to deploy. Skipping."
+            exit 0
+          fi
+
+          if grep -q "undefined\." "$PKG"; then
+            echo "ERROR: package.xml contains 'undefined.' members (bad metadata folder structure)."
+            exit 1
+          fi
+
+          echo "Deploying delta manifest..."
           sf project deploy start \
             --manifest "$PKG" \
             --test-level RunLocalTests \
             --wait 60
-      # POST destructive changes (if present)
-      - name: Deploy POST destructive changes
-        if: ${{ hashFiles('changed-sources/**/destructiveChangesPost.xml') != '' }}
+
+      # ---------- POST destructive (optional) ----------
+      - name: Deploy destructive changes (POST) - safe skip
         run: |
-          echo "Post-destructive file found. Deploying POST destructive..."
-          POST_FILE=$(find changed-sources -name destructiveChangesPost.xml | head -n 1)
-          PKG_FILE=$(dirname "$POST_FILE")/package.xml
-          echo "Using:"
-          echo "  POST_FILE=$POST_FILE"
-          echo "  PKG_FILE=$PKG_FILE"
+          MODE="${{ github.event.inputs.destructive_mode || 'post' }}"
+          echo "Destructive mode: $MODE"
+
+          if [ "$MODE" != "post" ]; then
+            echo "Not POST mode. Skipping POST destructive."
+            exit 0
+          fi
+
+          DXML="changed-sources/destructiveChanges/destructiveChanges.xml"
+          DPKG="changed-sources/destructiveChanges/package.xml"
+
+          if [ ! -f "$DXML" ]; then
+            echo "No destructiveChanges.xml found. Skipping POST destructive."
+            exit 0
+          fi
+
+          if ! grep -q "<types>" "$DXML"; then
+            echo "destructiveChanges.xml is empty. Nothing to delete. Skipping POST destructive."
+            exit 0
+          fi
+
+          echo "Deploying destructive changes (POST)..."
           sf project deploy start \
-            --manifest "$PKG_FILE" \
-            --post-destructive-changes "$POST_FILE" \
+            --manifest "$DPKG" \
+            --post-destructive-changes "$DXML" \
             --test-level RunLocalTests \
             --wait 60
-      # If no package.xml, skip deploy
-      - name: No delta changes - skipping deployment
-        if: ${{ hashFiles('changed-sources/package/package.xml') == '' }}
-        run: |
-          echo "No package.xml found. Skipping deployment."
-      # Cleanup always
+
       - name: Clean up
         if: always()
         run: rm -f server.key
