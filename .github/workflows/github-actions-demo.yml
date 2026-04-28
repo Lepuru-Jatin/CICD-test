@@ -37,6 +37,8 @@ jobs:
           sf version --verbose
 
       # Create delta packages WITH manifest (package.xml)
+
+      
       
       - name: Create delta packages
         run: |
@@ -46,7 +48,6 @@ jobs:
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
-            --generate-destructive-changes \
             --source-dir "force-app"
 
           echo "----- Listing changed-sources -----"
