@@ -63,6 +63,9 @@ jobs:
           else
             echo "No destructiveChanges.xml generated"
           fi
+          
+          echo "===== Git diff (what delta reads) ====="
+          git diff --name-status HEAD~1 HEAD || true
 
       # 2) Split destructiveChanges into Pre/Post (YOU control what goes where)
       #    By default below: we copy the same destructive file into BOTH.
