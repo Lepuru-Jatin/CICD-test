@@ -67,35 +67,37 @@ jobs:
       # 2) Split destructiveChanges into Pre/Post (YOU control what goes where)
       #    By default below: we copy the same destructive file into BOTH.
       #    Later you can adjust to pre-only or post-only.
-      - name: Prepare pre/post destructive manifests
+      - name: Prepare pre/post destructive manifests (override with repo manifests if present)
         run: |
           mkdir -p changed-sources/destructiveChanges
 
-          SRC="changed-sources/destructiveChanges/destructiveChanges.xml"
-          PRE="changed-sources/destructiveChanges/destructiveChangesPre.xml"
-          POST="changed-sources/destructiveChanges/destructiveChangesPost.xml"
+          PRE_SRC="manifest/destructiveChanges/destructiveChangesPre.xml"
+          POST_SRC="manifest/destructiveChanges/destructiveChangesPost.xml"
 
-          # If SGD generated SRC, treat it as PRE by default
-          if [ -f "$SRC" ]; then
-            cp "$SRC" "$PRE"
-            echo "✅ Copied generated destructiveChanges.xml to PRE"
+          PRE_DST="changed-sources/destructiveChanges/destructiveChangesPre.xml"
+          POST_DST="changed-sources/destructiveChanges/destructiveChangesPost.xml"
+
+          # Copy manual PRE if exists
+          if [ -f "$PRE_SRC" ]; then
+            cp "$PRE_SRC" "$PRE_DST"
+            echo "✅ Copied MANUAL PRE destructive: $PRE_SRC -> $PRE_DST"
+          else
+            echo "ℹ️ No manual PRE file found at $PRE_SRC"
           fi
 
-          # Only use POST if it contains real members (not empty)
-          if [ -f "$POST" ]; then
-            if grep -q "<types>" "$POST"; then
-              echo "✅ POST has deletions"
-            else
-              echo "⚠️ POST is empty -> removing"
-              rm -f "$POST"
-            fi
+          # Copy manual POST if exists (this is your case)
+          if [ -f "$POST_SRC" ]; then
+            cp "$POST_SRC" "$POST_DST"
+            echo "✅ Copied MANUAL POST destructive: $POST_SRC -> $POST_DST"
+          else
+            echo "ℹ️ No manual POST file found at $POST_SRC"
           fi
 
-          echo "----- PRE destructive -----"
-          [ -f "$PRE" ] && cat "$PRE" || echo "NO PRE FILE"
+          echo "----- FINAL PRE destructive -----"
+          [ -f "$PRE_DST" ] && cat "$PRE_DST" || echo "NO PRE FILE"
 
-          echo "----- POST destructive -----"
-          [ -f "$POST" ] && cat "$POST" || echo "NO POST FILE"
+          echo "----- FINAL POST destructive -----"
+          [ -f "$POST_DST" ] && cat "$POST_DST" || echo "NO POST FILE"
       # Create JWT key file from GitHub secret
       - name: Create JWT key file
         run: |
