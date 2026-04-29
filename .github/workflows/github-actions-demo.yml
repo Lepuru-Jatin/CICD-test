@@ -71,26 +71,31 @@ jobs:
         run: |
           mkdir -p changed-sources/destructiveChanges
 
+          SRC="changed-sources/destructiveChanges/destructiveChanges.xml"
           PRE="changed-sources/destructiveChanges/destructiveChangesPre.xml"
           POST="changed-sources/destructiveChanges/destructiveChangesPost.xml"
-          SRC="changed-sources/destructiveChanges/destructiveChanges.xml"
 
-          # Clean old
-          rm -f "$PRE"
-
-          # Only copy generated destructive if you DON'T already have a manual POST file
-          if [ -f "$POST" ]; then
-            echo "Manual POST destructive found. Not overwriting: $POST"
-          elif [ -f "$SRC" ]; then
-            cp "$SRC" "$POST"
-            echo "Copied generated destructive to POST: $POST"
-          else
-            echo "No destructive file found"
+          # If SGD generated SRC, treat it as PRE by default
+          if [ -f "$SRC" ]; then
+            cp "$SRC" "$PRE"
+            echo "✅ Copied generated destructiveChanges.xml to PRE"
           fi
+
+          # Only use POST if it contains real members (not empty)
+          if [ -f "$POST" ]; then
+            if grep -q "<types>" "$POST"; then
+              echo "✅ POST has deletions"
+            else
+              echo "⚠️ POST is empty -> removing"
+              rm -f "$POST"
+            fi
+          fi
+
+          echo "----- PRE destructive -----"
+          [ -f "$PRE" ] && cat "$PRE" || echo "NO PRE FILE"
 
           echo "----- POST destructive -----"
           [ -f "$POST" ] && cat "$POST" || echo "NO POST FILE"
-
       # Create JWT key file from GitHub secret
       - name: Create JWT key file
         run: |
@@ -124,7 +129,11 @@ jobs:
 
           echo "===== POST destructiveChangesPost.xml ====="
           cat changed-sources/destructiveChanges/destructiveChangesPost.xml || echo "NO destructiveChangesPost.xml"
-            # 3) Deploy delta (adds/updates) + pre/post destructive (if present)
+
+          echo "=== After SGD, show POST file ==="
+          ls -la changed-sources/destructiveChanges || true
+          cat changed-sources/destructiveChanges/destructiveChangesPost.xml || true
+      # 3) Deploy delta (adds/updates) + pre/post destructive (if present)
       - name: Deploy delta to Sandbox (manifest + pre/post destructive) - Run Local Tests
         if: ${{ hashFiles('changed-sources/package/package.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPre.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPost.xml') != '' }}
         run: |
