@@ -79,13 +79,13 @@ jobs:
           fi
 
           # Check: if you also have a manual PRE in manifest/ folder, copy it
-          if [ -f "manifest/destructiveChangesPre.xml" ]; then
-            cp "manifest/destructiveChangesPre.xml" "$PRE"
+          if [ -f "manifest/destructiveChanges/destructiveChangesPre.xml" ]; then
+            cp "manifest/destructiveChanges/destructiveChangesPre.xml" "$PRE"
             echo "✅ Copied manual PRE from manifest/"
           fi
 
           # Check: if you also have a manual POST in manifest/ folder, copy it
-          if [ -f "manifest/destructiveChangesPost.xml" ]; then
+          if [ -f "manifest/destructiveChanges/destructiveChangesPost.xml" ]; then
             cp "manifest/destructiveChangesPost.xml" "$POST"
             echo "✅ Copied manual POST from manifest/"
           fi
