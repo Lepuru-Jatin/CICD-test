@@ -86,7 +86,7 @@ jobs:
 
           # Check: if you also have a manual POST in manifest/ folder, copy it
           if [ -f "manifest/destructiveChanges/destructiveChangesPost.xml" ]; then
-            cp "manifest/destructiveChangesPost.xml" "$POST"
+            cp "manifest/destructiveChanges/destructiveChangesPost.xml" "$POST"
             echo "✅ Copied manual POST from manifest/"
           fi
 
