@@ -6,7 +6,6 @@ on:
     paths:
       - 'force-app/**'
       - 'manifest/**'
-      - '.github/workflows/**'
   workflow_dispatch:
 
 env:
@@ -26,225 +25,130 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v6
         with:
-          # IMPORTANT: full history so git diff can compare commit SHAs reliably
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
 
       - name: Install sfdx-git-delta
         run: |
-          set -e
           echo Y | sf plugins install sfdx-git-delta
           sf plugins
           sf version --verbose
-
-      # 1) Generate delta package + destructiveChanges (from force-app only)
+      # 1) Generate delta package + destructiveChanges
       - name: Create delta packages
         run: |
-          set -e
-
           mkdir -p changed-sources
-
-          FROM_SHA="${{ github.event.before }}"
-          TO_SHA="${{ github.sha }}"
-
-          echo "===== Delta Range ====="
-          echo "FROM_SHA=$FROM_SHA"
-          echo "TO_SHA=$TO_SHA"
-
-          echo "===== Git diff (what delta reads) ====="
-          git diff --name-status "$FROM_SHA" "$TO_SHA" || true
-
           sf sgd source delta \
-            --from "$FROM_SHA" \
-            --to "$TO_SHA" \
+            --to "HEAD" \
+            --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
             --source-dir "force-app"
-
           echo "----- Listing changed-sources -----"
-          find changed-sources -maxdepth 4 -type f -print || true
-
-          echo "----- DELTA package.xml -----"
+          ls -la changed-sources || true
+          echo "----- package.xml -----"
           if [ -f changed-sources/package/package.xml ]; then
             cat changed-sources/package/package.xml
           else
             echo "No package.xml generated"
           fi
-
-          echo "----- DELTA destructiveChanges.xml -----"
+          echo "----- destructiveChanges.xml -----"
           if [ -f changed-sources/destructiveChanges/destructiveChanges.xml ]; then
             cat changed-sources/destructiveChanges/destructiveChanges.xml
           else
             echo "No destructiveChanges.xml generated"
           fi
-
-          echo "----- DELTA destructiveChangesPost.xml (if any) -----"
-          if [ -f changed-sources/destructiveChanges/destructiveChangesPost.xml ]; then
-            cat changed-sources/destructiveChanges/destructiveChangesPost.xml
-          else
-            echo "No destructiveChangesPost.xml generated"
-          fi
-
-      # 2) If manifest/destructiveChanges changed in this push, copy into changed-sources
-      - name: Copy manifest destructive files to changed-sources (only if changed)
+      # 2) Split destructiveChanges into Pre/Post (YOU control what goes where)
+      #    By default below: we copy the same destructive file into BOTH.
+      #    Later you can adjust to pre-only or post-only.
+      - name: Prepare pre/post destructive manifests
         run: |
-          set -e
-
           mkdir -p changed-sources/destructiveChanges
 
-          FROM_SHA="${{ github.event.before }}"
-          TO_SHA="${{ github.sha }}"
-
-          echo "===== Checking manifest/destructiveChanges changes ====="
-          CHANGED_FILES="$(git diff --name-only "$FROM_SHA" "$TO_SHA" || true)"
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-
-          PRE_SRC="manifest/destructiveChanges/destructiveChangesPre.xml"
-          POST_SRC="manifest/destructiveChanges/destructiveChangesPost.xml"
-
-          PRE_DST="changed-sources/destructiveChanges/destructiveChangesPre.xml"
-          POST_DST="changed-sources/destructiveChanges/destructiveChangesPost.xml"
-
-          # Copy PRE only if that file changed
-          if echo "$CHANGED_FILES" | grep -qx "$PRE_SRC"; then
-            if [ -f "$PRE_SRC" ]; then
-              cp "$PRE_SRC" "$PRE_DST"
-              echo "✅ PRE manifest changed -> copied $PRE_SRC -> $PRE_DST"
-            else
-              echo "⚠️ PRE manifest marked changed but file missing: $PRE_SRC"
-            fi
-          else
-            echo "ℹ️ PRE manifest not changed -> not copying"
-          fi
-
-          # Copy POST only if that file changed
-          if echo "$CHANGED_FILES" | grep -qx "$POST_SRC"; then
-            if [ -f "$POST_SRC" ]; then
-              cp "$POST_SRC" "$POST_DST"
-              echo "✅ POST manifest changed -> copied $POST_SRC -> $POST_DST"
-            else
-              echo "⚠️ POST manifest marked changed but file missing: $POST_SRC"
-            fi
-          else
-            echo "ℹ️ POST manifest not changed -> not copying"
-          fi
-
-          echo "----- FINAL PRE (changed-sources) -----"
-          [ -f "$PRE_DST" ] && cat "$PRE_DST" || echo "NO PRE FILE"
-
-          echo "----- FINAL POST (changed-sources) -----"
-          [ -f "$POST_DST" ] && cat "$POST_DST" || echo "NO POST FILE"
-
-      # 3) Remove empty manifests (only <version>) to avoid useless deployments
-      - name: Remove empty delta/destructive manifests
-        run: |
-          set -e
-
-          PKG="changed-sources/package/package.xml"
+          SRC="changed-sources/destructiveChanges/destructiveChanges.xml"
           PRE="changed-sources/destructiveChanges/destructiveChangesPre.xml"
-          PRE_SGD="changed-sources/destructiveChanges/destructiveChanges.xml"
           POST="changed-sources/destructiveChanges/destructiveChangesPost.xml"
 
-          echo "===== Cleanup empty files (no <types>) ====="
-
-          # package.xml: keep only if it has <types>
-          if [ -f "$PKG" ] && ! grep -q "<types>" "$PKG"; then
-            echo "⚠️ package.xml has no <types> -> removing: $PKG"
-            rm -f "$PKG"
+          # If SGD generated destructiveChanges.xml, copy it to POST (safer default)
+          if [ -f "$SRC" ]; then
+            cp "$SRC" "$POST"
+            echo "✅ Copied destructiveChanges.xml → POST"
+          else
+            echo "⚠️ No destructiveChanges.xml generated by SGD (no deletions detected)"
           fi
 
-          # sgd pre destructive (destructiveChanges.xml) - keep only if it has <types>
-          if [ -f "$PRE_SGD" ] && ! grep -q "<types>" "$PRE_SGD"; then
-            echo "⚠️ SGD destructiveChanges.xml has no <types> -> removing: $PRE_SGD"
-            rm -f "$PRE_SGD"
+          # Check: if you also have a manual PRE in manifest/ folder, copy it
+          if [ -f "manifest/destructiveChangesPre.xml" ]; then
+            cp "manifest/destructiveChangesPre.xml" "$PRE"
+            echo "✅ Copied manual PRE from manifest/"
           fi
 
-          # pre destructive we deploy (destructiveChangesPre.xml) - keep only if it has <types>
-          if [ -f "$PRE" ] && ! grep -q "<types>" "$PRE"; then
-            echo "⚠️ PRE destructive has no <types> -> removing: $PRE"
-            rm -f "$PRE"
+          # Check: if you also have a manual POST in manifest/ folder, copy it
+          if [ -f "manifest/destructiveChangesPost.xml" ]; then
+            cp "manifest/destructiveChangesPost.xml" "$POST"
+            echo "✅ Copied manual POST from manifest/"
           fi
 
-          # post destructive - keep only if it has <types>
-          if [ -f "$POST" ] && ! grep -q "<types>" "$POST"; then
-            echo "⚠️ POST destructive has no <types> -> removing: $POST"
-            rm -f "$POST"
-          fi
-
-          echo "===== After cleanup: list changed-sources ====="
-          find changed-sources -maxdepth 4 -type f -print || true
-
+          echo "----- PRE destructive -----"
+          [ -f "$PRE" ] && cat "$PRE" || echo "NO PRE FILE"
+          echo "----- POST destructive -----"
+          [ -f "$POST" ] && cat "$POST" || echo "NO POST FILE"
       # Create JWT key file from GitHub secret
       - name: Create JWT key file
         run: |
-          set -e
           echo "${{ secrets.SF_JWT_KEY }}" > server.key
           chmod 600 server.key
-
       - name: Debug INSTANCE_URL
         run: |
           echo "SF_INSTANCE_URL='${{ vars.SF_INSTANCE_URL }}'"
-
       # Authenticate to Salesforce via JWT
       - name: Authenticate to Salesforce (JWT)
         run: |
-          set -e
           sf org login jwt \
             --username "${{ secrets.SF_USER_NAME }}" \
             --jwt-key-file server.key \
             --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
             --instance-url "${{ vars.SF_INSTANCE_URL }}" \
             --set-default
-
-      - name: Debug final deploy inputs
+      - name: Debug delta outputs
         run: |
-          echo "===== FINAL FILES USED FOR DEPLOY ====="
+          echo "===== LIST changed-sources ====="
           find changed-sources -maxdepth 4 -type f -print || true
-
-          echo "===== package.xml ====="
+          echo "===== DELTA package.xml ====="
           cat changed-sources/package/package.xml || echo "NO package.xml"
-
-          echo "===== pre-destructive ====="
-          cat changed-sources/destructiveChanges/destructiveChangesPre.xml || echo "NO pre destructive"
-
-          echo "===== post-destructive ====="
-          cat changed-sources/destructiveChanges/destructiveChangesPost.xml || echo "NO post destructive"
-
-      # 4) Deploy delta + pre/post destructive (only if at least one valid file exists)
-      - name: Deploy to Sandbox (delta + pre/post destructive) - Run Local Tests
+          echo "===== GENERATED destructiveChanges.xml ====="
+          cat changed-sources/destructiveChanges/destructiveChanges.xml || echo "NO destructiveChanges.xml"
+          echo "===== POST destructiveChangesPost.xml ====="
+          cat changed-sources/destructiveChanges/destructiveChangesPost.xml || echo "NO destructiveChangesPost.xml"
+          echo "=== After SGD, show POST file ==="
+          ls -la changed-sources/destructiveChanges || true
+          cat changed-sources/destructiveChanges/destructiveChangesPost.xml || true
+      # 3) Deploy delta (adds/updates) + pre/post destructive (if present)
+      - name: Deploy delta to Sandbox (manifest + pre/post destructive) - Run Local Tests
         if: ${{ hashFiles('changed-sources/package/package.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPre.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPost.xml') != '' }}
         run: |
-          set -e
-
           echo "Preparing deploy command..."
           CMD="sf project deploy start --wait 60 --test-level RunLocalTests"
-
-          # Pre-destructive
+          # If pre-destructive exists, include it
           if [ -f changed-sources/destructiveChanges/destructiveChangesPre.xml ]; then
             CMD="$CMD --pre-destructive-changes changed-sources/destructiveChanges/destructiveChangesPre.xml"
           fi
-
-          # Manifest (delta add/update)
+          # If package.xml exists, include it
           if [ -f changed-sources/package/package.xml ]; then
             CMD="$CMD --manifest changed-sources/package/package.xml"
           fi
-
-          # Post-destructive
+          
+          # If post-destructive exists, include it
           if [ -f changed-sources/destructiveChanges/destructiveChangesPost.xml ]; then
             CMD="$CMD --post-destructive-changes changed-sources/destructiveChanges/destructiveChangesPost.xml"
           fi
-
           echo "Running: $CMD"
           eval "$CMD"
-
       - name: No delta or destructive changes - skipping deployment
         if: ${{ hashFiles('changed-sources/package/package.xml') == '' && hashFiles('changed-sources/destructiveChanges/destructiveChangesPre.xml') == '' && hashFiles('changed-sources/destructiveChanges/destructiveChangesPost.xml') == '' }}
         run: |
-          echo "No deployable package.xml and no destructive changes found. Skipping deployment."
-
+          echo "No package.xml and no destructive changes found. Skipping deployment."
       - name: Clean up
         if: always()
         run: rm -f server.key
