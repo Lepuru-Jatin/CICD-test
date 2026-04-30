@@ -118,7 +118,7 @@ jobs:
           
           # If post-destructive exists, include it
           if [ -f changed-sources/destructiveChanges/destructiveChangesPost.xml ]; then
-            CMD="$CMD --post-destructive-changes changed-sources/destructiveChanges/destructiveChangesPost.xml"
+            CMD="sf project deploy start --post-destructive-changes changed-sources/destructiveChanges/destructiveChangesPost.xml"
           fi
           echo "Running: $CMD"
           eval "$CMD"
