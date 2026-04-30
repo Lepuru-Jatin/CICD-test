@@ -44,7 +44,7 @@ jobs:
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
-            --source-dir "manifest"
+            --source-dir "force-app"
           echo "----- Listing changed-sources -----"
           ls -la changed-sources || true
           echo "----- package.xml -----"
@@ -118,7 +118,11 @@ jobs:
           
           # If post-destructive exists, include it
           if [ -f changed-sources/destructiveChanges/destructiveChangesPost.xml ]; then
-            CMD="sf project deploy start --post-destructive-changes changed-sources/destructiveChanges/destructiveChangesPost.xml"
+            
+          sf project deploy start --wait 60 \
+            --post-destructive-changes changed-sources/destructiveChanges/destructiveChangesPost.xml \
+            --test-level NoTestRun
+
           fi
           echo "Running: $CMD"
           eval "$CMD"
