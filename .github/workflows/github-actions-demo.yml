@@ -44,7 +44,7 @@ jobs:
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
-            --source-dir "force-app"
+            --source-dir "manifest"
           echo "----- Listing changed-sources -----"
           ls -la changed-sources || true
           echo "----- package.xml -----"
