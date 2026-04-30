@@ -1,39 +1,32 @@
-name: Deploy to Sandbox (Delta + Destructive) on push to main
+name: Deploy to sfsb environment on push to main
 
 on:
   push:
     branches: [ main ]
     paths:
-      - "force-app/**"
-      - "manifest/**"
-      - ".github/workflows/**"
+      - 'force-app/**'
+      - 'manifest/**'
   workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  deploy:
+  deploy-to-sfsb-environment:
     runs-on: ubuntu-latest
     environment: SANDBOX
 
     steps:
-      # ---------------------------
-      # 0) Checkout + Node
-      # ---------------------------
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: '24'
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
-      # ---------------------------
-      # 1) Install SF CLI + SGD
-      # ---------------------------
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
 
@@ -42,136 +35,97 @@ jobs:
           echo Y | sf plugins install sfdx-git-delta
           sf plugins
           sf version --verbose
-
-      # ---------------------------
-      # 2) Generate Delta (package + destructive)
-      # ---------------------------
+      # 1) Generate delta package + destructiveChanges
       - name: Create delta packages
         run: |
-          set -e
-          rm -rf changed-sources
           mkdir -p changed-sources
-
           sf sgd source delta \
             --to "HEAD" \
             --from "HEAD~1" \
             --output-dir "changed-sources" \
             --generate-delta \
             --source-dir "force-app"
-
           echo "----- Listing changed-sources -----"
-          find changed-sources -maxdepth 4 -type f -print || true
-
+          ls -la changed-sources || true
           echo "----- package.xml -----"
           if [ -f changed-sources/package/package.xml ]; then
             cat changed-sources/package/package.xml
           else
             echo "No package.xml generated"
           fi
-
           echo "----- destructiveChanges.xml -----"
           if [ -f changed-sources/destructiveChanges/destructiveChanges.xml ]; then
             cat changed-sources/destructiveChanges/destructiveChanges.xml
           else
             echo "No destructiveChanges.xml generated"
           fi
-
-      # ---------------------------
-      # 3) Prepare PRE/POST destructive files
-      #    (Default: put all deletes into POST)
-      # ---------------------------
+      # 2) Split destructiveChanges into Pre/Post (YOU control what goes where)
+      #    By default below: we copy the same destructive file into BOTH.
+      #    Later you can adjust to pre-only or post-only.
       - name: Prepare pre/post destructive manifests
         run: |
-          set -e
           mkdir -p changed-sources/destructiveChanges
-
-          SRC="changed-sources/destructiveChanges/destructiveChanges.xml"
           PRE="changed-sources/destructiveChanges/destructiveChangesPre.xml"
           POST="changed-sources/destructiveChanges/destructiveChangesPost.xml"
-
-          rm -f "$PRE" "$POST"
-
-          # Default strategy:
-          # - Put all detected deletes into POST (safe for most cases)
-          if [ -f "$SRC" ]; then
+          SRC="changed-sources/destructiveChanges/destructiveChanges.xml"
+          # Clean old
+          rm -f "$PRE"
+          # Only copy generated destructive if you DON'T already have a manual POST file
+          if [ -f "$POST" ]; then
+            echo "Manual POST destructive found. Not overwriting: $POST"
+          elif [ -f "$SRC" ]; then
             cp "$SRC" "$POST"
             echo "Copied generated destructive to POST: $POST"
           else
-            echo "No destructive file found. Skipping PRE/POST creation."
+            echo "No destructive file found"
           fi
-
-          echo "----- PRE destructive -----"
-          [ -f "$PRE" ] && cat "$PRE" || echo "NO PRE FILE"
-
           echo "----- POST destructive -----"
           [ -f "$POST" ] && cat "$POST" || echo "NO POST FILE"
-
-      # ---------------------------
-      # 4) Create JWT key file
-      # ---------------------------
+      # Create JWT key file from GitHub secret
       - name: Create JWT key file
         run: |
-          set -e
           echo "${{ secrets.SF_JWT_KEY }}" > server.key
           chmod 600 server.key
-
       - name: Debug INSTANCE_URL
         run: |
           echo "SF_INSTANCE_URL='${{ vars.SF_INSTANCE_URL }}'"
-
-      # ---------------------------
-      # 5) Authenticate (JWT)
-      # ---------------------------
+      # Authenticate to Salesforce via JWT
       - name: Authenticate to Salesforce (JWT)
         run: |
-          set -e
           sf org login jwt \
             --username "${{ secrets.SF_USER_NAME }}" \
             --jwt-key-file server.key \
             --client-id "${{ secrets.SF_CONSUMER_KEY }}" \
             --instance-url "${{ vars.SF_INSTANCE_URL }}" \
             --set-default
-
       - name: Debug org connection
-        run: sf org display --verbose
-
-      # ---------------------------
-      # 6) Deploy (only if there is something)
-      # ---------------------------
-      - name: Deploy Delta + Destructive (RunLocalTests)
+        run: |
+          sf org display --verbose
+      # 3) Deploy delta (adds/updates) + pre/post destructive (if present)
+      - name: Deploy delta to Sandbox (manifest + pre/post destructive) - Run Local Tests
         if: ${{ hashFiles('changed-sources/package/package.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPre.xml') != '' || hashFiles('changed-sources/destructiveChanges/destructiveChangesPost.xml') != '' }}
         run: |
-          set -e
           echo "Preparing deploy command..."
-
           CMD="sf project deploy start --wait 60 --test-level RunLocalTests"
-
-          # Pre destructive (optional)
+          # If pre-destructive exists, include it
           if [ -f changed-sources/destructiveChanges/destructiveChangesPre.xml ]; then
             CMD="$CMD --pre-destructive-changes changed-sources/destructiveChanges/destructiveChangesPre.xml"
           fi
-
-          # Delta package (add/update)
+          # If package.xml exists, include it
           if [ -f changed-sources/package/package.xml ]; then
             CMD="$CMD --manifest changed-sources/package/package.xml"
           fi
-
-          # Post destructive (deletes)
+          
+          # If post-destructive exists, include it
           if [ -f changed-sources/destructiveChanges/destructiveChangesPost.xml ]; then
             CMD="$CMD --post-destructive-changes changed-sources/destructiveChanges/destructiveChangesPost.xml"
           fi
-
           echo "Running: $CMD"
           eval "$CMD"
-
       - name: No delta or destructive changes - skipping deployment
         if: ${{ hashFiles('changed-sources/package/package.xml') == '' && hashFiles('changed-sources/destructiveChanges/destructiveChangesPre.xml') == '' && hashFiles('changed-sources/destructiveChanges/destructiveChangesPost.xml') == '' }}
         run: |
           echo "No package.xml and no destructive changes found. Skipping deployment."
-
-      # ---------------------------
-      # 7) Cleanup
-      # ---------------------------
       - name: Clean up
         if: always()
         run: rm -f server.key
