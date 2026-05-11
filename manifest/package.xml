@@ -44,7 +44,7 @@
     
     
     <types>
-        <members>*</members>
+        <members>Account.Trail_Code__c</members>
         <name>CustomField</name>
     </types>
 >
