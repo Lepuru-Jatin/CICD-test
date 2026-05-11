@@ -3,6 +3,6 @@
   <fullName>Trail_Code__c</fullName>
   <label>Trail Code</label>
   <type>Text</type>
-  <length>100</length>
+  <length>1000</length>
   <required>false</required>
 </CustomField>
